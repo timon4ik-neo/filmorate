@@ -9,6 +9,8 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.is;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -127,5 +129,132 @@ class FilmorateApplicationTests {
                                 }
                                 """))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void friendsEndpointsShouldAddRemoveAndReturnCommonFriends() throws Exception {
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "first@example.com",
+                                  "login": "first",
+                                  "birthday": "1995-03-21"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "second@example.com",
+                                  "login": "second",
+                                  "birthday": "1995-03-22"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "third@example.com",
+                                  "login": "third",
+                                  "birthday": "1995-03-23"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(put("/users/1/friends/2"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(put("/users/3/friends/2"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/users/1/friends"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id", is(2)));
+
+        mockMvc.perform(get("/users/1/friends/common/3"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id", is(2)));
+
+        mockMvc.perform(delete("/users/1/friends/2"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/users/1/friends"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()", is(0)));
+    }
+
+    @Test
+    void likesEndpointsShouldUpdateLikesAndReturnPopularFilms() throws Exception {
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "first@example.com",
+                                  "login": "first",
+                                  "birthday": "1995-03-21"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "second@example.com",
+                                  "login": "second",
+                                  "birthday": "1995-03-22"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/films")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "First film",
+                                  "description": "First description",
+                                  "releaseDate": "2001-01-01",
+                                  "duration": 100
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/films")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "Second film",
+                                  "description": "Second description",
+                                  "releaseDate": "2002-01-01",
+                                  "duration": 110
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(put("/films/1/like/1"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(put("/films/1/like/2"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(put("/films/2/like/1"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/films/popular?count=2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id", is(1)))
+                .andExpect(jsonPath("$[1].id", is(2)));
+
+        mockMvc.perform(delete("/films/1/like/2"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/films/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.likes.length()", is(1)));
     }
 }

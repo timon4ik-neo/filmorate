@@ -37,4 +37,11 @@ public class ErrorHandler {
         log.warn("Entity not found: {}", exception.getMessage());
         return new ErrorResponse(exception.getMessage());
     }
+
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ErrorResponse handleException(Exception exception) {
+        log.error("Unexpected error", exception);
+        return new ErrorResponse("Internal server error");
+    }
 }
