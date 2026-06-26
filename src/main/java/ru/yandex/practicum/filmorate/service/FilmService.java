@@ -1,93 +1,65 @@
 package ru.yandex.practicum.filmorate.service;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
-import java.time.LocalDate;
 import java.util.Collection;
-import java.util.Comparator;
 
-@Slf4j
-@Service
-public class FilmService {
-    private static final LocalDate FIRST_FILM_RELEASE_DATE = LocalDate.of(1895, 12, 28);
+/**
+ * Defines business operations for films.
+ */
+public interface FilmService {
+    /**
+     * Validates and saves a new film.
+     *
+     * @param film film data from the request body
+     * @return saved film with an assigned identifier
+     */
+    Film addFilm(Film film);
 
-    private final FilmStorage filmStorage;
-    private final UserStorage userStorage;
+    /**
+     * Validates and updates an existing film.
+     *
+     * @param film film data with an existing identifier
+     * @return updated film
+     */
+    Film updateFilm(Film film);
 
-    @Autowired
-    public FilmService(FilmStorage filmStorage, UserStorage userStorage) {
-        this.filmStorage = filmStorage;
-        this.userStorage = userStorage;
-    }
+    /**
+     * Returns all saved films.
+     *
+     * @return collection of films
+     */
+    Collection<Film> getFilms();
 
-    public Film addFilm(Film film) {
-        validateFilm(film);
-        Film savedFilm = filmStorage.add(film);
-        log.info("Film created: id={}, name={}", savedFilm.getId(), savedFilm.getName());
-        return savedFilm;
-    }
+    /**
+     * Returns a film by identifier.
+     *
+     * @param id film identifier
+     * @return found film
+     */
+    Film getFilm(int id);
 
-    public Film updateFilm(Film film) {
-        validateFilm(film);
-        Film updatedFilm = filmStorage.update(film);
-        log.info("Film updated: id={}, name={}", updatedFilm.getId(), updatedFilm.getName());
-        return updatedFilm;
-    }
+    /**
+     * Adds a user's like to a film.
+     *
+     * @param filmId film identifier
+     * @param userId user identifier
+     */
+    void addLike(int filmId, int userId);
 
-    public Collection<Film> getFilms() {
-        return filmStorage.getAll();
-    }
+    /**
+     * Removes a user's like from a film.
+     *
+     * @param filmId film identifier
+     * @param userId user identifier
+     */
+    void removeLike(int filmId, int userId);
 
-    public Film getFilm(int id) {
-        return filmStorage.getById(id);
-    }
-
-    public void addLike(int filmId, int userId) {
-        Film film = filmStorage.getById(filmId);
-        userStorage.getById(userId);
-        film.getLikes().add(userId);
-        log.info("User id={} liked film id={}", userId, filmId);
-    }
-
-    public void removeLike(int filmId, int userId) {
-        Film film = filmStorage.getById(filmId);
-        userStorage.getById(userId);
-        film.getLikes().remove(userId);
-        log.info("User id={} removed like from film id={}", userId, filmId);
-    }
-
-    public Collection<Film> getPopularFilms(int count) {
-        if (count < 0) {
-            throw new ValidationException("Popular films count must not be negative");
-        }
-        return filmStorage.getAll()
-                .stream()
-                .sorted(Comparator.comparingInt((Film film) -> film.getLikes().size()).reversed())
-                .limit(count)
-                .toList();
-    }
-
-    private void validateFilm(Film film) {
-        if (film.getName() == null || film.getName().isBlank()) {
-            throw new ValidationException("Film name must not be blank");
-        }
-        if (film.getDescription() != null && film.getDescription().length() > 200) {
-            throw new ValidationException("Film description must not be longer than 200 characters");
-        }
-        if (film.getReleaseDate() == null) {
-            throw new ValidationException("Film release date must be specified");
-        }
-        if (film.getReleaseDate().isBefore(FIRST_FILM_RELEASE_DATE)) {
-            throw new ValidationException("Film release date must not be earlier than December 28, 1895");
-        }
-        if (film.getDuration() <= 0) {
-            throw new ValidationException("Film duration must be positive");
-        }
-    }
+    /**
+     * Returns the most popular films sorted by like count.
+     *
+     * @param count maximum number of films to return
+     * @return collection of popular films
+     */
+    Collection<Film> getPopularFilms(int count);
 }
