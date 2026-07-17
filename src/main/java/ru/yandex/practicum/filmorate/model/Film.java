@@ -1,16 +1,23 @@
 package ru.yandex.practicum.filmorate.model;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Film {
     private int id;
 
@@ -26,5 +33,10 @@ public class Film {
     @Positive(message = "Film duration must be positive")
     private int duration;
 
-    private Set<Integer> likes = new HashSet<>();
+    @Valid
+    @NotNull(message = "MPA rating must be specified")
+    private Mpa mpa;
+
+    @Builder.Default
+    private Set<Genre> genres = new LinkedHashSet<>();
 }

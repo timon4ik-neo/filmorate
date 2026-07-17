@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.exception;
 
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -12,9 +13,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @RestControllerAdvice
 public class ErrorHandler {
-    @ExceptionHandler(ValidationException.class)
+    @ExceptionHandler({ValidationException.class, ConstraintViolationException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleValidationException(ValidationException exception) {
+    public ErrorResponse handleValidationException(RuntimeException exception) {
         log.warn("Validation error: {}", exception.getMessage());
         return new ErrorResponse(exception.getMessage());
     }
@@ -22,9 +23,7 @@ public class ErrorHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleMethodArgumentNotValidException(MethodArgumentNotValidException exception) {
-        String message = exception.getBindingResult()
-                .getFieldErrors()
-                .stream()
+        String message = exception.getBindingResult().getFieldErrors().stream()
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .collect(Collectors.joining("; "));
         log.warn("Request body validation error: {}", message);
@@ -40,7 +39,7 @@ public class ErrorHandler {
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ErrorResponse handleException(Exception exception) {
+    public ErrorResponse handleUnexpectedException(Exception exception) {
         log.error("Unexpected error", exception);
         return new ErrorResponse("Internal server error");
     }

@@ -1,74 +1,83 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Collection;
 
-/**
- * Defines business operations for users and friendship management.
- */
-public interface UserService {
-    /**
-     * Validates and saves a new user.
-     *
-     * @param user user data from the request body
-     * @return saved user with an assigned identifier
-     */
-    User addUser(User user);
+@Slf4j
+@Service
+public class UserService {
+    private final UserStorage userStorage;
 
-    /**
-     * Validates and updates an existing user.
-     *
-     * @param user user data with an existing identifier
-     * @return updated user
-     */
-    User updateUser(User user);
+    public UserService(@Qualifier("userDbStorage") UserStorage userStorage) {
+        this.userStorage = userStorage;
+    }
 
-    /**
-     * Returns all saved users.
-     *
-     * @return collection of users
-     */
-    Collection<User> getUsers();
+    public User create(User user) {
+        validateAndPrepare(user);
+        User created = userStorage.create(user);
+        log.info("User created: id={}, login={}", created.getId(), created.getLogin());
+        return created;
+    }
 
-    /**
-     * Returns a user by identifier.
-     *
-     * @param id user identifier
-     * @return found user
-     */
-    User getUser(int id);
+    public User update(User user) {
+        userStorage.getById(user.getId());
+        validateAndPrepare(user);
+        User updated = userStorage.update(user);
+        log.info("User updated: id={}, login={}", updated.getId(), updated.getLogin());
+        return updated;
+    }
 
-    /**
-     * Adds users to each other's friend lists.
-     *
-     * @param userId user identifier
-     * @param friendId friend identifier
-     */
-    void addFriend(int userId, int friendId);
+    public Collection<User> findAll() {
+        return userStorage.findAll();
+    }
 
-    /**
-     * Removes users from each other's friend lists.
-     *
-     * @param userId user identifier
-     * @param friendId friend identifier
-     */
-    void removeFriend(int userId, int friendId);
+    public User getById(int userId) {
+        return userStorage.getById(userId);
+    }
 
-    /**
-     * Returns a user's friends.
-     *
-     * @param userId user identifier
-     * @return collection of friends
-     */
-    Collection<User> getFriends(int userId);
+    public void addFriend(int userId, int friendId) {
+        validateFriendPair(userId, friendId);
+        userStorage.addFriend(userId, friendId);
+        log.info("User {} added user {} as a friend", userId, friendId);
+    }
 
-    /**
-     * Returns friends shared by two users.
-     *
-     * @param userId user identifier
-     * @param otherId another user identifier
-     * @return collection of common friends
-     */
-    Collection<User> getCommonFriends(int userId, int otherId);
+    public void removeFriend(int userId, int friendId) {
+        validateFriendPair(userId, friendId);
+        userStorage.removeFriend(userId, friendId);
+        log.info("User {} removed user {} from friends", userId, friendId);
+    }
+
+    public Collection<User> getFriends(int userId) {
+        userStorage.getById(userId);
+        return userStorage.getFriends(userId);
+    }
+
+    public Collection<User> getCommonFriends(int userId, int otherId) {
+        userStorage.getById(userId);
+        userStorage.getById(otherId);
+        return userStorage.getCommonFriends(userId, otherId);
+    }
+
+    private void validateAndPrepare(User user) {
+        if (user.getLogin() == null || user.getLogin().isBlank() || user.getLogin().contains(" ")) {
+            throw new ValidationException("Login must not be blank or contain spaces");
+        }
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
+    }
+
+    private void validateFriendPair(int userId, int friendId) {
+        userStorage.getById(userId);
+        userStorage.getById(friendId);
+        if (userId == friendId) {
+            throw new ValidationException("A user cannot add themselves as a friend");
+        }
+    }
 }

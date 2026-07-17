@@ -4,13 +4,17 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class User {
     private int id;
 
@@ -26,6 +30,4 @@ public class User {
     @NotNull(message = "Birthday must be specified")
     @PastOrPresent(message = "Birthday must not be in the future")
     private LocalDate birthday;
-
-    private Set<Integer> friends = new HashSet<>();
 }

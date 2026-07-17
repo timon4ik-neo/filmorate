@@ -1,7 +1,6 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,29 +19,28 @@ import java.util.Collection;
 public class UserController {
     private final UserService userService;
 
-    @Autowired
     public UserController(UserService userService) {
         this.userService = userService;
     }
 
     @PostMapping
-    public User createUser(@Valid @RequestBody User user) {
-        return userService.addUser(user);
+    public User create(@Valid @RequestBody User user) {
+        return userService.create(user);
     }
 
     @PutMapping
-    public User updateUser(@Valid @RequestBody User user) {
-        return userService.updateUser(user);
+    public User update(@Valid @RequestBody User user) {
+        return userService.update(user);
     }
 
     @GetMapping
-    public Collection<User> getUsers() {
-        return userService.getUsers();
+    public Collection<User> findAll() {
+        return userService.findAll();
     }
 
     @GetMapping("/{id}")
-    public User getUser(@PathVariable int id) {
-        return userService.getUser(id);
+    public User getById(@PathVariable int id) {
+        return userService.getById(id);
     }
 
     @PutMapping("/{id}/friends/{friendId}")
